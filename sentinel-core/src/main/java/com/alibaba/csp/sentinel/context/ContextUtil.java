@@ -110,6 +110,7 @@ public class ContextUtil {
      * @return The invocation context of the current thread
      */
     public static Context enter(String name, String origin) {
+        // 不能和默认上线文名称sentinel_default_context重复
         if (Constants.CONTEXT_DEFAULT_NAME.equals(name)) {
             throw new ContextNameDefineException(
                 "The " + Constants.CONTEXT_DEFAULT_NAME + " can't be permit to defined!");
@@ -117,28 +118,44 @@ public class ContextUtil {
         return trueEnter(name, origin);
     }
 
+    /**
+     * 调用创建上下文
+     * @param name 上下文名称
+     * @param origin 调用方
+     * @return
+     */
     protected static Context trueEnter(String name, String origin) {
         Context context = contextHolder.get();
         if (context == null) {
+            // 用local变量来访问volatile，避免并发访问空指针隐患的同时提升效率
+            // 懵逼 啥意思？
             Map<String, DefaultNode> localCacheNameMap = contextNameNodeMap;
+            // 查看是否有上下文名称对应的entranceNode，相同上下文名称使用同一个entranceNode
             DefaultNode node = localCacheNameMap.get(name);
             if (node == null) {
+                // 超最大数量
                 if (localCacheNameMap.size() > Constants.MAX_CONTEXT_NAME_SIZE) {
                     setNullContext();
                     return NULL_CONTEXT;
                 } else {
                     try {
+                        //加锁
                         LOCK.lock();
                         node = contextNameNodeMap.get(name);
+                        // double check 双重校验
                         if (node == null) {
+                            // 超最大数量
                             if (contextNameNodeMap.size() > Constants.MAX_CONTEXT_NAME_SIZE) {
                                 setNullContext();
                                 return NULL_CONTEXT;
                             } else {
+                                // 创建一个新的entranceNode
                                 node = new EntranceNode(new StringResourceWrapper(name, EntryType.IN), null);
                                 // Add entrance node.
+                                // context之间没有层级结构，只有root -> entrance
                                 Constants.ROOT.addChild(node);
 
+                                // 重新构建context entranceNode Map
                                 Map<String, DefaultNode> newMap = new HashMap<>(contextNameNodeMap.size() + 1);
                                 newMap.putAll(contextNameNodeMap);
                                 newMap.put(name, node);
@@ -146,6 +163,7 @@ public class ContextUtil {
                             }
                         }
                     } finally {
+                        // 解锁
                         LOCK.unlock();
                     }
                 }
