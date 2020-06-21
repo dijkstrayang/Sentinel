@@ -30,10 +30,13 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
  */
 class CtEntry extends Entry {
 
+    /** entry的父entry，用于在同一个context上下文中，多次调用entry方法，保存entry之间的关系。 */
     protected Entry parent = null;
+    /** entry的子entry，与parent相反 */
     protected Entry child = null;
-
+    /** 插槽链 */
     protected ProcessorSlot<Object> chain;
+    /** 上下文*/
     protected Context context;
 
     CtEntry(ResourceWrapper resourceWrapper, ProcessorSlot<Object> chain, Context context) {
@@ -44,15 +47,23 @@ class CtEntry extends Entry {
         setUpEntryFor(context);
     }
 
+    /**
+     * 整理当前上下文中的调用链路关系
+     * @param context
+     */
     private void setUpEntryFor(Context context) {
         // The entry should not be associated to NullContext.
         if (context instanceof NullContext) {
             return;
         }
+        // 获取当前的entry 并且赋给 parent，即表示当前entry的上游资源调用
         this.parent = context.getCurEntry();
+        // 如果当前parent有值，说明在此之前有SphU.entry调用并且没有exit
+        // 则把自己赋给parent的儿子，完成调用链条
         if (parent != null) {
             ((CtEntry)parent).child = this;
         }
+        //将线程context的当前资源调用指向自己
         context.setCurEntry(this);
     }
 

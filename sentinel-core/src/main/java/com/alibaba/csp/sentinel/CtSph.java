@@ -116,13 +116,16 @@ public class CtSph implements Sph {
 
     private Entry entryWithPriority(ResourceWrapper resourceWrapper, int count, boolean prioritized, Object... args)
         throws BlockException {
+        // 获取当前线程上下文对象
         Context context = ContextUtil.getContext();
+        // 上下文名称对应的入口节点是否已经超过阈值2000，超过则会返回空 CtEntry
         if (context instanceof NullContext) {
             // The {@link NullContext} indicates that the amount of context has exceeded the threshold,
             // so here init the entry only. No rule checking will be done.
             return new CtEntry(resourceWrapper, null, context);
         }
 
+        // 如果没有指定上下文名称，则使用默认名称，也就是默认入口节点
         if (context == null) {
             // Using default context.
             context = InternalContextUtil.internalEnter(Constants.CONTEXT_DEFAULT_NAME);
@@ -133,6 +136,8 @@ public class CtSph implements Sph {
             return new CtEntry(resourceWrapper, null, context);
         }
 
+        // 生成插槽链
+        // 需要注意的是，同一个resource,共享同一个处理Slot链条，并使用这个链条来完成限流熔断逻辑 切记
         ProcessorSlot<Object> chain = lookProcessChain(resourceWrapper);
 
         /*
@@ -143,10 +148,13 @@ public class CtSph implements Sph {
             return new CtEntry(resourceWrapper, null, context);
         }
 
+        // 生成 Entry 对象
         Entry e = new CtEntry(resourceWrapper, chain, context);
         try {
+            // 开始执行插槽链 调用逻辑
             chain.entry(context, resourceWrapper, null, count, prioritized, args);
         } catch (BlockException e1) {
+            // 清除上下文
             e.exit(count, args);
             throw e1;
         } catch (Throwable e1) {
@@ -192,6 +200,7 @@ public class CtSph implements Sph {
      * @return {@link ProcessorSlotChain} of the resource
      */
     ProcessorSlot<Object> lookProcessChain(ResourceWrapper resourceWrapper) {
+        // 根据资源尝试从全局缓存中获取
         ProcessorSlotChain chain = chainMap.get(resourceWrapper);
         if (chain == null) {
             synchronized (LOCK) {
@@ -201,7 +210,7 @@ public class CtSph implements Sph {
                     if (chainMap.size() >= Constants.MAX_SLOT_CHAIN_SIZE) {
                         return null;
                     }
-
+                    // 具体构造chain的方法
                     chain = SlotChainProvider.newSlotChain();
                     Map<ResourceWrapper, ProcessorSlotChain> newMap = new HashMap<ResourceWrapper, ProcessorSlotChain>(
                         chainMap.size() + 1);
