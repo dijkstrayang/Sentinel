@@ -15,7 +15,9 @@
  */
 package com.alibaba.csp.sentinel;
 
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.util.TimeUtil;
+import com.alibaba.csp.sentinel.util.function.BiConsumer;
 import com.alibaba.csp.sentinel.context.ContextUtil;
 import com.alibaba.csp.sentinel.node.Node;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
@@ -44,6 +46,7 @@ import com.alibaba.csp.sentinel.context.Context;
  * @author qinan.qn
  * @author jialiang.linjl
  * @author leyou(lihao)
+ * @author Eric Zhao
  * @see SphU
  * @see Context
  * @see ContextUtil
@@ -52,22 +55,23 @@ public abstract class Entry implements AutoCloseable {
 
     private static final Object[] OBJECTS0 = new Object[0];
 
-    /** 当前entry的创建时间，毫秒值，用来计算响应时间rt */
-    private long createTime;
-    /** 当前Entry所关联的node，会在NodeSelectorSlot插槽中设置，主要是记录了当前Context下的统计信息 */
+    private final long createTimestamp;
+    private long completeTimestamp;
+
     private Node curNode;
     /**
      * {@link Node} of the specific origin, Usually the origin is the Service Consumer.
-     * context的请求源节点，通常是服务的消费端，如果存在的话，在ClusterBuilderSlot的entry方法中设置,主要是记录了特定origin调用方的的统计信息
      */
     private Node originNode;
+
     private Throwable error;
-    /** 当前Entry所关联的资源包装器 */
-    protected ResourceWrapper resourceWrapper;
+    private BlockException blockError;
+
+    protected final ResourceWrapper resourceWrapper;
 
     public Entry(ResourceWrapper resourceWrapper) {
         this.resourceWrapper = resourceWrapper;
-        this.createTime = TimeUtil.currentTimeMillis();
+        this.createTimestamp = TimeUtil.currentTimeMillis();
     }
 
     public ResourceWrapper getResourceWrapper() {
@@ -123,8 +127,17 @@ public abstract class Entry implements AutoCloseable {
      */
     public abstract Node getLastNode();
 
-    public long getCreateTime() {
-        return createTime;
+    public long getCreateTimestamp() {
+        return createTimestamp;
+    }
+
+    public long getCompleteTimestamp() {
+        return completeTimestamp;
+    }
+
+    public Entry setCompleteTimestamp(long completeTimestamp) {
+        this.completeTimestamp = completeTimestamp;
+        return this;
     }
 
     public Node getCurNode() {
@@ -133,6 +146,15 @@ public abstract class Entry implements AutoCloseable {
 
     public void setCurNode(Node node) {
         this.curNode = node;
+    }
+
+    public BlockException getBlockError() {
+        return blockError;
+    }
+
+    public Entry setBlockError(BlockException blockError) {
+        this.blockError = blockError;
+        return this;
     }
 
     public Throwable getError() {
@@ -157,4 +179,14 @@ public abstract class Entry implements AutoCloseable {
         this.originNode = originNode;
     }
 
+    /**
+     * Like {@code CompletableFuture} since JDK 8, it guarantees specified handler
+     * is invoked when this entry terminated (exited), no matter it's blocked or permitted.
+     * Use it when you did some STATEFUL operations on entries.
+     * 
+     * @param handler handler function on the invocation terminates
+     * @since 1.8.0
+     */
+    public abstract void whenTerminate(BiConsumer<Context, Entry> handler);
+    
 }
