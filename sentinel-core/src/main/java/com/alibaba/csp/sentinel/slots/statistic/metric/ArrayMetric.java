@@ -35,13 +35,20 @@ import com.alibaba.csp.sentinel.util.function.Predicate;
  */
 public class ArrayMetric implements Metric {
 
+    /**
+     * LeapArray 的泛型类为 MetricBucket，意思就是指标桶，可以认为一个 MetricBucket 对象可以存储一个抽样时间段内所有的指标，
+     * 例如一个抽象时间段中通过数量、阻塞数量、异常数量、成功数量、响应时间，其实现的奥秘在 LongAdder 中
+     */
     private final LeapArray<MetricBucket> data;
 
     public ArrayMetric(int sampleCount, int intervalInMs) {
         this.data = new OccupiableBucketLeapArray(sampleCount, intervalInMs);
     }
 
+
     public ArrayMetric(int sampleCount, int intervalInMs, boolean enableOccupy) {
+        //是否允许抢占，即当前时间戳已经达到限制后，是否可以占用下一个时间窗口的容量，这里对应 LeapArray 的两个实现类，
+        // 如果允许抢占，则为 OccupiableBucketLeapArray，否则为 BucketLeapArray。
         if (enableOccupy) {
             this.data = new OccupiableBucketLeapArray(sampleCount, intervalInMs);
         } else {

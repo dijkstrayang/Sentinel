@@ -17,7 +17,7 @@ package com.alibaba.csp.sentinel.slots.statistic.base;
 
 /**
  * Wrapper entity class for a period of time window.
- *
+ * 时间窗口的包装类
  * @param <T> data type
  * @author jialiang.linjl
  * @author Eric Zhao
@@ -26,16 +26,19 @@ public class WindowWrap<T> {
 
     /**
      * Time length of a single window bucket in milliseconds.
+     * 窗口时间间隔，单位毫秒
      */
     private final long windowLengthInMs;
 
     /**
      * Start timestamp of the window in milliseconds.
+     * 窗口开始时间，单位毫秒
      */
     private long windowStart;
 
     /**
      * Statistic data.
+     * 统计数据
      */
     private T value;
 
@@ -68,7 +71,7 @@ public class WindowWrap<T> {
 
     /**
      * Reset start timestamp of current bucket to provided time.
-     *
+     * 重置窗口开始时间
      * @param startTime valid start timestamp
      * @return bucket after reset
      */
@@ -79,7 +82,7 @@ public class WindowWrap<T> {
 
     /**
      * Check whether given timestamp is in current bucket.
-     *
+     * 用于检查给定的时间戳是否处于当前窗口桶中
      * @param timeMillis valid timestamp in ms
      * @return true if the given time is in current bucket, otherwise false
      * @since 1.5.0
