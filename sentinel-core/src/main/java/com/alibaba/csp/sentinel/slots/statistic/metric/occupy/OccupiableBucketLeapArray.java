@@ -24,6 +24,8 @@ import com.alibaba.csp.sentinel.slots.statistic.data.MetricBucket;
 
 /**
  * @author jialiang.linjl
+ * 所谓的 OccupiableBucketLeapArray ，实现的思想是当前抽样统计中的“令牌”已耗尽，即达到用户设定的相关指标的阔值后，
+ * 可以向下一个时间窗口，即借用未来一个采样区间。
  * @since 1.5.0
  */
 public class OccupiableBucketLeapArray extends LeapArray<MetricBucket> {
@@ -40,6 +42,7 @@ public class OccupiableBucketLeapArray extends LeapArray<MetricBucket> {
     public MetricBucket newEmptyBucket(long time) {
         MetricBucket newBucket = new MetricBucket();
 
+        // 在新建的时候，如果曾经有借用过未来的滑动窗口，则将未来的滑动窗口上收集的数据 copy 到新创建的采集指标上，再返回。
         MetricBucket borrowBucket = borrowArray.getWindowValue(time);
         if (borrowBucket != null) {
             newBucket.reset(borrowBucket);
