@@ -46,15 +46,19 @@ public class ContextUtil {
 
     /**
      * Store the context in ThreadLocal for easy access.
+     * 存储线程上下文对象
      */
     private static ThreadLocal<Context> contextHolder = new ThreadLocal<>();
 
     /**
      * Holds all {@link EntranceNode}. Each {@link EntranceNode} is associated with a distinct context name.
+     * 存储所有上下文的入口节点（每个上下文都关联一个入口节点），key为上下文名称，
      */
     private static volatile Map<String, DefaultNode> contextNameNodeMap = new HashMap<>();
 
     private static final ReentrantLock LOCK = new ReentrantLock();
+
+    // 如果上下文数量超过最大限制，则返回NULL_CONTEXT,表示不进行规则的检查
     private static final Context NULL_CONTEXT = new NullContext();
 
     static {
@@ -118,25 +122,30 @@ public class ContextUtil {
     }
 
     protected static Context trueEnter(String name, String origin) {
+        // threadLoacal中取出上下文
         Context context = contextHolder.get();
+        // 为空则创建
         if (context == null) {
             Map<String, DefaultNode> localCacheNameMap = contextNameNodeMap;
             DefaultNode node = localCacheNameMap.get(name);
             if (node == null) {
+                // 超过上下文最大数量，返回NULL_CONTEXT
                 if (localCacheNameMap.size() > Constants.MAX_CONTEXT_NAME_SIZE) {
                     setNullContext();
                     return NULL_CONTEXT;
                 } else {
                     LOCK.lock();
                     try {
+                        //双重校验
                         node = contextNameNodeMap.get(name);
                         if (node == null) {
                             if (contextNameNodeMap.size() > Constants.MAX_CONTEXT_NAME_SIZE) {
                                 setNullContext();
                                 return NULL_CONTEXT;
                             } else {
+                                // 创建入口节点
                                 node = new EntranceNode(new StringResourceWrapper(name, EntryType.IN), null);
-                                // Add entrance node.
+                                // Add entrance node. 添加到根节点
                                 Constants.ROOT.addChild(node);
 
                                 Map<String, DefaultNode> newMap = new HashMap<>(contextNameNodeMap.size() + 1);
@@ -152,6 +161,7 @@ public class ContextUtil {
             }
             context = new Context(node, name);
             context.setOrigin(origin);
+            // 存放于本地线程变量中
             contextHolder.set(context);
         }
 
@@ -196,6 +206,8 @@ public class ContextUtil {
     /**
      * Exit context of current thread, that is removing {@link Context} in the
      * ThreadLocal.
+     * 退出当前上下文环境，这里有一个条件就是当前的上下文环境的当前调用节点已经退出，否则无法移除，
+     * 故使用建议：ContextUtil . exit 一定要在持有的 Entry 退出之后再调用。
      */
     public static void exit() {
         Context context = contextHolder.get();
@@ -265,7 +277,7 @@ public class ContextUtil {
     /**
      * Execute the code within provided context.
      * This is mainly designed for context switching (e.g. in asynchronous invocation).
-     *
+     *异步上下文环境切换
      * @param context the context
      * @param f       lambda to run within the context
      * @since 0.2.0

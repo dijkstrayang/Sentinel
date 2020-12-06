@@ -30,10 +30,14 @@ import java.util.Map;
 /**
  * </p>
  * This class will try to build the calling traces via
+ * 这个类会构建一个调用树
  * <ol>
  * <li>adding a new {@link DefaultNode} if needed as the last child in the context.
+ * 如果需要，添加一个新的{@link DefaultNode}作为上下文中的最后一个子节点
  * The context's last node is the current node or the parent node of the context. </li>
+ * 上下文的最后一个节点是当前节点或上下文的父节点
  * <li>setting itself to the context current node.</li>
+ * 将自身设置为上下文当前节点
  * </ol>
  * </p>
  *
@@ -73,6 +77,8 @@ import java.util.Map;
  * is identified by both the resource id and {@link Context}. In other words, one resource
  * id will generate multiple {@link DefaultNode} for each distinct context, but only one
  * {@link ClusterNode}.
+ * ClusterNode由resourceId唯一标识，而Default则由resourceId和上下文Context唯一标识
+ * 换句话说，一个资源在不同上下文中也会生成不同DefaultNode,但只会有一个CulsterNode
  * </p>
  * <p>
  * the following code shows one resource id in two different context:
@@ -128,6 +134,11 @@ public class NodeSelectorSlot extends AbstractLinkedProcessorSlot<Object> {
 
     /**
      * {@link DefaultNode}s of the same resource in different context.
+     * 存储相同资源在不同上下文的DefaultNode，key是上下文名称
+     *
+     * 相同资源是共享相同的ProcessorSlotChain链路,所以相同资源不同上下文会进到相同的NodeSelectSlot,
+     * 所以使用上下文名称是可以区分的不同DefaultNode，而使用资源名称是无法区分的
+     *
      */
     private volatile Map<String, DefaultNode> map = new HashMap<String, DefaultNode>(10);
 
@@ -154,7 +165,7 @@ public class NodeSelectorSlot extends AbstractLinkedProcessorSlot<Object> {
          */
         // 根据「上下文」的名称获取DefaultNode
         // 多线程环境下，每个线程都会创建一个context，
-        // 只要资源名相同，则context的名称也相同，那么获取到的节点就相同
+        // 只要资源名相同，且context的名称也相同，那么获取到的节点就相同
         DefaultNode node = map.get(context.getName());
         if (node == null) {
             synchronized (this) {

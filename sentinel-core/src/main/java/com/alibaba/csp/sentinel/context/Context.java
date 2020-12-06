@@ -25,7 +25,7 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
 
 /**
  * This class holds metadata of current invocation:<br/>
- *
+ * 该类保存当前调用的元数据
  * <ul>
  * <li>the {@link EntranceNode}: the root of the current invocation
  * tree.</li>
