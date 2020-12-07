@@ -23,7 +23,7 @@ import com.alibaba.csp.sentinel.util.function.Predicate;
 
 /**
  * Represents a basic structure recording invocation metrics of protected resources.
- *
+ * 指标接口 各种指标的操作方法
  * @author jialiang.linjl
  * @author Eric Zhao
  */

@@ -29,7 +29,7 @@ import com.alibaba.csp.sentinel.util.function.Predicate;
 
 /**
  * The basic metric class in Sentinel using a {@link BucketLeapArray} internal.
- *
+ * 指标实现类
  * @author jialiang.linjl
  * @author Eric Zhao
  */

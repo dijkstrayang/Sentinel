@@ -25,7 +25,7 @@ import com.alibaba.csp.sentinel.util.function.Predicate;
 
 /**
  * Holds real-time statistics for resources.
- *
+ * 定义了对资源统计的接口：定义了收集统计信息与获取统计信息的接口
  * @author qinan.qn
  * @author leyou
  * @author Eric Zhao

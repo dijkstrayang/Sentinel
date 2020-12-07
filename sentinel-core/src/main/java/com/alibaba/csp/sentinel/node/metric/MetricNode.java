@@ -21,6 +21,7 @@ import java.util.Date;
 
 /**
  * Metrics data for a specific resource at given {@code timestamp}.
+ * 记录指定资源在给定时间点的统计数据
  *
  * @author jialiang.linjl
  * @author Carpenter Lee

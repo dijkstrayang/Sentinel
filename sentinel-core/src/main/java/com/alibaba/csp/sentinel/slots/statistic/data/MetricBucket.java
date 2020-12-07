@@ -21,13 +21,13 @@ import com.alibaba.csp.sentinel.slots.statistic.base.LongAdder;
 
 /**
  * Represents metrics data in a period of time span.
- * 表示一段时间内的统计数据指标，例如一个抽象时间段中通过数量、阻塞数量、异常数量、成功数量、响应时间，其实现的奥秘在 LongAdder 中
+ * 指标桶：表示一段时间内的统计数据指标，例如一个抽象时间段中通过数量、阻塞数量、异常数量、成功数量、响应时间，其实现的奥秘在 LongAdder 中
  * @author jialiang.linjl
  * @author Eric Zhao
  */
 public class MetricBucket {
 
-    private final LongAdder[] counters;
+    private final LongAdder[] counters;//数组每个元素代表一个时间的计数值
 
     private volatile long minRt;
 
