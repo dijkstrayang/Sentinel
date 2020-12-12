@@ -28,7 +28,9 @@ import com.alibaba.csp.sentinel.property.SentinelProperty;
  */
 public abstract class AbstractDataSource<S, T> implements ReadableDataSource<S, T> {
 
+    /** Converter接口负责转换数据 */
     protected final Converter<S, T> parser;
+    /** SentinelProperty接口负责触发PropertyListener的configUpdate方法的回调*/
     protected final SentinelProperty<T> property;
 
     public AbstractDataSource(Converter<S, T> parser) {
